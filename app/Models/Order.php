@@ -18,6 +18,7 @@ class Order extends Model
         'customer_name',
         'customer_email',
         'customer_phone',
+        'order_type',
         'total_amount',
         'status',
         'payment_method',
@@ -25,7 +26,7 @@ class Order extends Model
         'transaction_id',
         'payment_payload',
         'notes',
-        'sequence', // Make sure 'sequence' is fillable
+        'sequence',
     ];
 
     protected $casts = [

@@ -1,0 +1,62 @@
+<!-- layouts/DashboardLayout.vue -->
+<template>
+    <div class="flex h-screen bg-slate-50">
+        <!-- Main Dashboard Sidebar -->
+        <aside class="flex w-16 flex-col border-r border-slate-200 bg-white">
+            <div class="border-b border-slate-200 p-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500">
+                    <Store class="h-6 w-6 text-white" />
+                </div>
+            </div>
+
+            <nav class="flex-1 space-y-2 p-2">
+                <DashboardNavItem v-for="item in navigationItems" :key="item.name" :item="item" :active="isActive(item.route)" />
+            </nav>
+
+            <div class="border-t border-slate-200 p-2">
+                <DashboardNavItem :item="settingsItem" :active="isActive(settingsItem.route)" />
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-hidden">
+            <slot />
+        </main>
+    </div>
+</template>
+
+<script setup lang="ts">
+import DashboardNavItem from '@/components/dashboard/DashboardNavItem.vue';
+import { usePage } from '@inertiajs/vue3';
+import { BarChart3, Home, Package, Settings, ShoppingCart, Store, Users } from 'lucide-vue-next';
+
+interface NavigationItem {
+    name: string;
+    route: string;
+    icon: any;
+}
+
+const page = usePage();
+
+const navigationItems: NavigationItem[] = [
+    { name: 'Dashboard', route: 'home', icon: Home },
+    { name: 'Orders', route: 'home', icon: ShoppingCart },
+    { name: 'Menu', route: 'home', icon: Package },
+    { name: 'Customers', route: 'home', icon: Users },
+    { name: 'Analytics', route: 'home', icon: BarChart3 },
+];
+
+const settingsItem: NavigationItem = {
+    name: 'Settings',
+    route: 'home',
+    icon: Settings,
+};
+
+const isActive = (route: string) => {
+    const currentRoute = page.component;
+    if (route === 'settings.products') {
+        return currentRoute.startsWith('settings/');
+    }
+    return currentRoute === route;
+};
+</script>
