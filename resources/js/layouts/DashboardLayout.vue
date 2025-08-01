@@ -1,10 +1,8 @@
-<!-- layouts/DashboardLayout.vue -->
 <template>
     <div class="flex h-screen bg-slate-50">
-        <!-- Main Dashboard Sidebar -->
-        <aside class="flex w-16 flex-col border-r border-slate-200 bg-white">
+        <aside class="flex w-32 flex-col items-center border-r border-slate-200 bg-white">
             <div class="border-b border-slate-200 p-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500">
+                <div class="flex h-16 w-16 items-center justify-center rounded-lg bg-red-500">
                     <Store class="h-6 w-6 text-white" />
                 </div>
             </div>
@@ -18,7 +16,6 @@
             </div>
         </aside>
 
-        <!-- Main Content Area -->
         <main class="flex-1 overflow-hidden">
             <slot />
         </main>
@@ -27,6 +24,7 @@
 
 <script setup lang="ts">
 import DashboardNavItem from '@/components/dashboard/DashboardNavItem.vue';
+import { useFlashToast } from '@/composables/useFlashToast';
 import { usePage } from '@inertiajs/vue3';
 import { BarChart3, Home, Package, Settings, ShoppingCart, Store, Users } from 'lucide-vue-next';
 
@@ -41,7 +39,7 @@ const page = usePage();
 const navigationItems: NavigationItem[] = [
     { name: 'Dashboard', route: 'home', icon: Home },
     { name: 'Orders', route: 'home', icon: ShoppingCart },
-    { name: 'Menu', route: 'home', icon: Package },
+    { name: 'Menu', route: 'admin.products.index', icon: Package },
     { name: 'Customers', route: 'home', icon: Users },
     { name: 'Analytics', route: 'home', icon: BarChart3 },
 ];
@@ -59,4 +57,6 @@ const isActive = (route: string) => {
     }
     return currentRoute === route;
 };
+
+useFlashToast();
 </script>
