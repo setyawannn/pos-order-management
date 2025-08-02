@@ -15,13 +15,13 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
 
     // Actions
     const loadOrders = () => {
+        // This is the method that will be called to refresh the orders list
         orders.value = orderStorage.getOrders();
     };
 
-    const addOrder = (order: any) => {
-        orderStorage.saveOrder(order);
-        loadOrders(); // Refresh the list
-    };
+    // We no longer need 'addOrder' action in this store directly,
+    // as orderStorage.saveOrder will be called by cartStore,
+    // and then we just call loadOrders to refresh.
 
     const getOrderByCode = (orderCode: string): StoredOrder | null => {
         return orderStorage.getOrderByCode(orderCode);
@@ -30,19 +30,17 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
     const clearAllOrders = () => {
         orderStorage.clearOrders();
         orders.value = [];
+        toast.info('Order history cleared'); // Add toast here too
     };
 
     // Fetch latest status and full details from server
     const refreshOrderDetails = async (orderCode: string) => {
         isLoading.value = true;
         try {
-            // Use the API route for getting order status/details
             const response = await fetch(route('api.orders.status', { orderCode: orderCode }));
             const result = await response.json();
 
             if (response.ok && result.success) {
-                // Update the stored order with the full new data
-                // Ensure the data structure matches StoredOrder interface
                 const updatedOrderData = {
                     order_code: result.data.order.order_code,
                     customer_name: result.data.order.customer_name,
@@ -52,13 +50,13 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
                     table_number: result.data.order.table_number,
                     created_at: result.data.order.created_at,
                     items: result.data.order.items.map((item: any) => ({
-                        id: item.id, // OrderItem ID
+                        id: item.id,
                         product_name: item.product.name,
                         quantity: item.quantity,
                         price: parseFloat(item.price),
                         subtotal: parseFloat(item.subtotal),
                         notes: item.notes,
-                        is_done: item.is_done, // Ensure is_done is captured
+                        is_done: item.is_done,
                     })),
                 };
 
@@ -80,8 +78,8 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
         return null;
     };
 
-    // Initialize
-    loadOrders(); // Load existing orders from localStorage when the store is created
+    // Initialize: Load orders when the store is first created
+    loadOrders();
 
     return {
         // State
@@ -93,8 +91,7 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
         hasOrders,
 
         // Actions
-        loadOrders,
-        addOrder,
+        loadOrders, // Expose loadOrders
         getOrderByCode,
         clearAllOrders,
         refreshOrderDetails,

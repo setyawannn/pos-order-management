@@ -5,13 +5,13 @@ import { router } from '@inertiajs/vue3';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { useToast } from 'vue-toastification';
+import { useOrderHistoryStore } from './orderHistoryStore'; // Import order history store
 
 // Declare a global interface for window.Laravel if it's not already defined
 declare global {
     interface Window {
         Laravel: {
             csrfToken: string;
-            // Add other properties you might expose from Laravel
         };
     }
 }
@@ -43,9 +43,10 @@ export const useCartStore = defineStore(
         const canSubmitOrder = computed(() => {
             const hasItems = !isEmpty.value;
             const hasCustomerName = customerName.value.trim() !== '';
-            const hasTableNumber = orderType.value === 'dine_in' || tableNumber.value.trim() !== '';
 
-            return hasItems && hasCustomerName && hasTableNumber;
+            const hasTableNumberForDineIn = orderType.value === 'dine_in' ? tableNumber.value.trim() !== '' : true;
+
+            return hasItems && hasCustomerName && hasTableNumberForDineIn;
         });
 
         // Actions
@@ -111,7 +112,7 @@ export const useCartStore = defineStore(
             closeDrawer();
 
             if (itemCount > 0) {
-                toast.info('Cart cleared');
+                // No toast here as success/error toasts are handled by submitOrder
             }
         };
 
@@ -144,12 +145,12 @@ export const useCartStore = defineStore(
 
             try {
                 const formData = {
-                    _token: window.Laravel.csrfToken, // Explicitly add CSRF token
+                    _token: window.Laravel.csrfToken,
                     customer_name: customerName.value.trim(),
                     customer_email: customerEmail.value.trim() || null,
                     customer_phone: customerPhone.value.trim() || null,
                     order_type: orderType.value,
-                    table_number: orderType.value === 'dine_in' ? tableNumber.value.trim() : null,
+                    table_number: orderType.value === 'dine_in' ? tableNumber.value.trim() || null : null,
                     notes: orderNotes.value.trim() || null,
                     items: items.value.map((item) => ({
                         product_id: item.id,
@@ -158,13 +159,12 @@ export const useCartStore = defineStore(
                     })),
                 };
 
-                // Use fetch API for JSON response instead of Inertia.router.post
                 const response = await fetch('/orders', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         Accept: 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest', // Important for Laravel to recognize AJAX
+                        'X-Requested-With': 'XMLHttpRequest',
                     },
                     body: JSON.stringify(formData),
                 });
@@ -172,27 +172,24 @@ export const useCartStore = defineStore(
                 const result = await response.json();
 
                 if (response.ok) {
-                    // Check for successful HTTP status codes (2xx)
-                    // Save order to localStorage
                     orderStorage.saveOrder(result.data.order);
 
-                    // Clear cart
-                    clearCart();
+                    // --- NEW: Trigger order history update ---
+                    const orderHistoryStore = useOrderHistoryStore();
+                    orderHistoryStore.loadOrders(); // Explicitly tell the history store to reload its list
+                    // --- END NEW ---
 
-                    // Show success toast
+                    clearCart(); // Clear cart after successfully saving the order and updating history
                     toast.success(result.message);
 
-                    // Redirect to success page
                     setTimeout(() => {
                         router.visit(result.data.redirect_url);
                     }, 1000);
 
                     return true;
                 } else {
-                    // Handle API errors based on HTTP status code
                     let errorMessage = result.message || 'An error occurred during order submission.';
                     if (result.errors) {
-                        // Laravel validation errors
                         const firstErrorKey = Object.keys(result.errors)[0];
                         errorMessage = result.errors[firstErrorKey][0];
                     }

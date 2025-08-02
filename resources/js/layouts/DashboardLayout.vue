@@ -37,16 +37,16 @@ interface NavigationItem {
 const page = usePage();
 
 const navigationItems: NavigationItem[] = [
-    { name: 'Dashboard', route: 'home', icon: Home },
-    { name: 'Orders', route: 'home', icon: ShoppingCart },
+    { name: 'Dashboard', route: 'dashboard', icon: Home },
+    { name: 'Orders', route: 'dashboard', icon: ShoppingCart },
     { name: 'Menu', route: 'admin.products.index', icon: Package },
-    { name: 'Customers', route: 'home', icon: Users },
-    { name: 'Analytics', route: 'home', icon: BarChart3 },
+    { name: 'Customers', route: 'dashboard', icon: Users },
+    { name: 'Analytics', route: 'dashboard', icon: BarChart3 },
 ];
 
 const settingsItem: NavigationItem = {
     name: 'Settings',
-    route: 'home',
+    route: 'dashboard',
     icon: Settings,
 };
 

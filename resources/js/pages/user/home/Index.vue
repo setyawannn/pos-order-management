@@ -9,7 +9,7 @@
                     v-model="searchQuery"
                     type="text"
                     placeholder="Search for food, coffee, etc..."
-                    class="w-full rounded-xl border border-gray-200 bg-white py-3 pr-4 pl-10 text-sm focus:border-transparent focus:ring-2 focus:ring-red-500 focus:outline-none"
+                    class="w-full rounded-xl border border-gray-200 bg-white py-3 pr-4 pl-10 text-sm text-gray-800 focus:border-transparent focus:ring-2 focus:ring-red-500 focus:outline-none"
                 />
             </div>
 
