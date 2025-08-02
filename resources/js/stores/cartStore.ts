@@ -1,12 +1,26 @@
 // resources/js/stores/cartStore.ts
-import type { CartItem, OrderData } from '@/types';
+import { orderStorage } from '@/services/orderStorage';
+import type { CartItem } from '@/types';
 import { router } from '@inertiajs/vue3';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { useToast } from 'vue-toastification';
+
+// Declare a global interface for window.Laravel if it's not already defined
+declare global {
+    interface Window {
+        Laravel: {
+            csrfToken: string;
+            // Add other properties you might expose from Laravel
+        };
+    }
+}
 
 export const useCartStore = defineStore(
     'cart',
     () => {
+        const toast = useToast();
+
         // State
         const items = ref<CartItem[]>([]);
         const isDrawerOpen = ref(false);
@@ -27,7 +41,11 @@ export const useCartStore = defineStore(
         const isEmpty = computed(() => items.value.length === 0);
 
         const canSubmitOrder = computed(() => {
-            return !isEmpty.value && customerName.value.trim() !== '' && (orderType.value === 'take_away' || tableNumber.value.trim() !== '');
+            const hasItems = !isEmpty.value;
+            const hasCustomerName = customerName.value.trim() !== '';
+            const hasTableNumber = orderType.value === 'dine_in' || tableNumber.value.trim() !== '';
+
+            return hasItems && hasCustomerName && hasTableNumber;
         });
 
         // Actions
@@ -36,6 +54,7 @@ export const useCartStore = defineStore(
 
             if (existingItemIndex > -1) {
                 items.value[existingItemIndex].quantity += 1;
+                toast.success(`Added another ${product.name} to cart`);
             } else {
                 items.value.push({
                     id: product.id,
@@ -45,13 +64,19 @@ export const useCartStore = defineStore(
                     quantity: 1,
                     notes: '',
                 });
+                toast.success(`${product.name} added to cart`);
             }
         };
 
         const removeItem = (id: number) => {
+            const item = items.value.find((i) => i.id === id);
             const index = items.value.findIndex((item) => item.id === id);
+
             if (index > -1) {
                 items.value.splice(index, 1);
+                if (item) {
+                    toast.info(`${item.name} removed from cart`);
+                }
             }
         };
 
@@ -75,24 +100,28 @@ export const useCartStore = defineStore(
         };
 
         const clearCart = () => {
+            const itemCount = items.value.length;
             items.value = [];
             customerName.value = '';
             customerEmail.value = '';
             customerPhone.value = '';
             tableNumber.value = '';
             orderNotes.value = '';
+            submitError.value = '';
             closeDrawer();
+
+            if (itemCount > 0) {
+                toast.info('Cart cleared');
+            }
         };
 
         const openDrawer = () => {
             isDrawerOpen.value = true;
-            // Prevent body scroll when drawer is open
             document.body.style.overflow = 'hidden';
         };
 
         const closeDrawer = () => {
             isDrawerOpen.value = false;
-            // Restore body scroll
             document.body.style.overflow = '';
         };
 
@@ -106,6 +135,7 @@ export const useCartStore = defineStore(
         const submitOrder = async () => {
             if (!canSubmitOrder.value) {
                 submitError.value = 'Please fill in all required fields';
+                toast.error('Please fill in all required fields');
                 return false;
             }
 
@@ -113,40 +143,67 @@ export const useCartStore = defineStore(
             submitError.value = '';
 
             try {
-                const orderData: OrderData = {
-                    customer_name: customerName.value,
-                    customer_email: customerEmail.value || undefined,
-                    customer_phone: customerPhone.value || undefined,
+                const formData = {
+                    _token: window.Laravel.csrfToken, // Explicitly add CSRF token
+                    customer_name: customerName.value.trim(),
+                    customer_email: customerEmail.value.trim() || null,
+                    customer_phone: customerPhone.value.trim() || null,
                     order_type: orderType.value,
-                    table_number: orderType.value === 'dine_in' ? tableNumber.value : undefined,
-                    total_amount: totalPrice.value,
-                    notes: orderNotes.value || undefined,
+                    table_number: orderType.value === 'dine_in' ? tableNumber.value.trim() : null,
+                    notes: orderNotes.value.trim() || null,
                     items: items.value.map((item) => ({
                         product_id: item.id,
                         quantity: item.quantity,
-                        price: item.price,
-                        notes: item.notes || undefined,
+                        notes: item.notes?.trim() || null,
                     })),
                 };
 
-                await router.post(
-                    '/orders',
-                    { ...orderData },
-                    {
-                        onSuccess: () => {
-                            clearCart();
-                        },
-                        onError: (errors) => {
-                            console.error('Order submission failed:', errors);
-                            submitError.value = 'Failed to submit order. Please try again.';
-                        },
+                // Use fetch API for JSON response instead of Inertia.router.post
+                const response = await fetch('/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest', // Important for Laravel to recognize AJAX
                     },
-                );
+                    body: JSON.stringify(formData),
+                });
 
-                return true;
-            } catch (error) {
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Check for successful HTTP status codes (2xx)
+                    // Save order to localStorage
+                    orderStorage.saveOrder(result.data.order);
+
+                    // Clear cart
+                    clearCart();
+
+                    // Show success toast
+                    toast.success(result.message);
+
+                    // Redirect to success page
+                    setTimeout(() => {
+                        router.visit(result.data.redirect_url);
+                    }, 1000);
+
+                    return true;
+                } else {
+                    // Handle API errors based on HTTP status code
+                    let errorMessage = result.message || 'An error occurred during order submission.';
+                    if (result.errors) {
+                        // Laravel validation errors
+                        const firstErrorKey = Object.keys(result.errors)[0];
+                        errorMessage = result.errors[firstErrorKey][0];
+                    }
+                    throw new Error(errorMessage);
+                }
+            } catch (error: any) {
                 console.error('Order submission error:', error);
-                submitError.value = 'An unexpected error occurred. Please try again.';
+                let displayMessage = error.message || 'An unexpected error occurred. Please try again.';
+
+                submitError.value = displayMessage;
+                toast.error(displayMessage);
                 return false;
             } finally {
                 isSubmitting.value = false;
@@ -186,8 +243,9 @@ export const useCartStore = defineStore(
     },
     {
         persist: {
-            key: 'cart-store',
-            paths: ['items', 'orderType', 'tableNumber', 'customerName', 'customerEmail', 'customerPhone'],
+            key: 'pos-cart-store',
+            storage: localStorage,
+            paths: ['items', 'orderType', 'tableNumber', 'customerName', 'customerEmail', 'customerPhone', 'orderNotes'],
         } as any,
     },
 );

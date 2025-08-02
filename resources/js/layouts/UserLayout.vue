@@ -1,6 +1,9 @@
 <!-- resources/js/layouts/UserLayout.vue -->
 <template>
     <div class="relative min-h-screen bg-gray-50">
+        <Head>
+            <meta name="csrf-token" :content="$page.props.csrf_token" />
+        </Head>
         <!-- Header -->
         <header class="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
             <div class="px-4 py-3">

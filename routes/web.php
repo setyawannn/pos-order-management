@@ -3,10 +3,15 @@
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('user.home');
+
+Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+Route::get('/order/{orderCode}/success', [OrderController::class, 'success'])->name('user.order.success');
+Route::get('/order/{orderCode}', [OrderController::class, 'show'])->name('user.order.show');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
