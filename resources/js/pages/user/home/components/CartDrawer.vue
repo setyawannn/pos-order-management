@@ -46,22 +46,24 @@
                         </div>
 
                         <div>
-                            <label class="mb-1 block text-sm font-medium text-gray-700"> Phone Number </label>
+                            <label class="mb-1 block text-sm font-medium text-gray-700"> Phone Number <span class="text-red-500">*</span> </label>
                             <input
                                 v-model="cartStore.customerPhone"
                                 type="tel"
                                 placeholder="Enter your phone number"
                                 class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-red-500 focus:outline-none"
+                                required
                             />
                         </div>
 
                         <div>
-                            <label class="mb-1 block text-sm font-medium text-gray-700"> Email </label>
+                            <label class="mb-1 block text-sm font-medium text-gray-700"> Email <span class="text-red-500">*</span> </label>
                             <input
                                 v-model="cartStore.customerEmail"
                                 type="email"
                                 placeholder="Enter your email"
                                 class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-red-500 focus:outline-none"
+                                required
                             />
                         </div>
 

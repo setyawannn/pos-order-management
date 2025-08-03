@@ -10,15 +10,15 @@ class StoreOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // Allow anonymous users
+        return true;
     }
 
     public function rules(): array
     {
         return [
             'customer_name' => 'required|string|max:255',
-            'customer_email' => 'nullable|email|max:255',
-            'customer_phone' => 'nullable|string|max:20',
+            'customer_email' => 'required|email|max:255',
+            'customer_phone' => 'required|string|max:20',
             'order_type' => ['required', Rule::in(['dine_in', 'take_away'])],
             'table_number' => 'required_if:order_type,dine_in|nullable|string|max:10',
             'notes' => 'nullable|string|max:1000',
@@ -33,7 +33,9 @@ class StoreOrderRequest extends FormRequest
     {
         return [
             'customer_name.required' => 'Customer name is required.',
+            'customer_email.required' => 'Email is required.',
             'customer_email.email' => 'Please enter a valid email address.',
+            'customer_phone.required' => 'Phone number is required.',
             'order_type.required' => 'Please select an order type.',
             'order_type.in' => 'Order type must be either dine in or take away.',
             'table_number.required_if' => 'Table number is required for dine in orders.',
@@ -49,7 +51,6 @@ class StoreOrderRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Clean and prepare data
         if ($this->has('customer_phone')) {
             $this->merge([
                 'customer_phone' => preg_replace('/[^0-9+]/', '', $this->customer_phone)

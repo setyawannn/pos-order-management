@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\KitchenController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
@@ -21,6 +22,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('categories', CategoryController::class);
         Route::resource('products', ProductController::class);
+        Route::get('kitchen', [KitchenController::class, 'index'])
+            ->name('kitchen.index')
+            ->middleware('role:chef,admin,owner');
     });
 });
 

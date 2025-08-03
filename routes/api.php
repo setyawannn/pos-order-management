@@ -1,6 +1,7 @@
 <?php
 // routes/api.php
 
+use App\Http\Controllers\Admin\KitchenController;
 use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,11 @@ use Illuminate\Support\Facades\Route;
 
 // API route to get order status/details
 Route::get('/orders/{orderCode}/status', [OrderController::class, 'getOrderStatus'])->name('api.orders.status');
+Route::prefix('kitchen')->name('api.kitchen.')->group(function () {
+    Route::get('orders', [KitchenController::class, 'getOrdersApi'])->name('orders');
+    Route::patch('order-items/{orderItem}/toggle-done', [KitchenController::class, 'toggleOrderItemDone'])->name('order-items.toggle-done');
+    Route::patch('orders/{order}/status', [KitchenController::class, 'updateOrderStatus'])->name('orders.update-status');
+});
 
 // Other API routes can go here, e.g. for kitchen app to update item status
 // Route::post('/order-items/{orderItem}/toggle-done', [KitchenController::class, 'toggleDone']);

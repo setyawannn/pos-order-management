@@ -1,3 +1,4 @@
+<!-- layouts/DashboardLayout.vue -->
 <template>
     <div class="flex h-screen bg-slate-50">
         <aside class="flex w-32 flex-col items-center border-r border-slate-200 bg-white">
@@ -26,7 +27,8 @@
 import DashboardNavItem from '@/components/dashboard/DashboardNavItem.vue';
 import { useFlashToast } from '@/composables/useFlashToast';
 import { usePage } from '@inertiajs/vue3';
-import { BarChart3, Home, Package, Settings, ShoppingCart, Store, Users } from 'lucide-vue-next';
+import { BarChart3, Home, Package, Settings, Store, Users, UtensilsCrossed } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 interface NavigationItem {
     name: string;
@@ -36,9 +38,13 @@ interface NavigationItem {
 
 const page = usePage();
 
+const currentRouteName = computed(() => {
+    return page.props.ziggy && page.props.ziggy.route ? page.props.ziggy.route.name : null;
+});
+
 const navigationItems: NavigationItem[] = [
     { name: 'Dashboard', route: 'dashboard', icon: Home },
-    { name: 'Orders', route: 'dashboard', icon: ShoppingCart },
+    { name: 'Orders', route: 'admin.kitchen.index', icon: UtensilsCrossed },
     { name: 'Menu', route: 'admin.products.index', icon: Package },
     { name: 'Customers', route: 'dashboard', icon: Users },
     { name: 'Analytics', route: 'dashboard', icon: BarChart3 },
@@ -46,16 +52,24 @@ const navigationItems: NavigationItem[] = [
 
 const settingsItem: NavigationItem = {
     name: 'Settings',
-    route: 'dashboard',
+    route: 'dashboard', // Or a specific settings route like 'admin.settings.index'
     icon: Settings,
 };
 
 const isActive = (route: string) => {
-    const currentRoute = page.component;
-    if (route === 'settings.products') {
-        return currentRoute.startsWith('settings/');
+    // Use the safely accessed currentRouteName
+    const current = currentRouteName.value;
+    if (!current) {
+        return false;
     }
-    return currentRoute === route;
+
+    if (route === 'admin.products.index' && current.startsWith('admin.products')) {
+        return true;
+    }
+    if (route === 'admin.kitchen.index' && current.startsWith('admin.kitchen')) {
+        return true;
+    }
+    return current === route; // Direct match for dashboard etc.
 };
 
 useFlashToast();

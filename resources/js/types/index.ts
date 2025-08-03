@@ -47,26 +47,29 @@ export interface OrderData {
     notes?: string;
 }
 
-// Order model structure received from backend
 export interface Order {
     id: number;
     order_code: string;
+    table_number: string | null; // Allow null for takeaway
     customer_name: string;
-    customer_email?: string;
-    customer_phone?: string;
+    customer_email: string | null; // Allow null
+    customer_phone: string | null; // Allow null
     order_type: 'dine_in' | 'take_away';
-    table_number?: string;
     total_amount: number;
     status: 'waiting_payment' | 'payment_failed' | 'in_queue' | 'in_progress' | 'ready_to_serve' | 'completed' | 'cancelled';
-    payment_method?: string;
+    payment_method: string | null;
     payment_status: string; // Assuming for now
-    transaction_id?: string;
-    payment_payload?: any;
-    notes?: string;
-    sequence?: number;
+    transaction_id: string | null;
+    payment_payload: any | null;
+    notes: string | null;
+    sequence: number | null;
     created_at: string;
     updated_at: string;
-    items: OrderItem[]; // Now explicitly include OrderItem
+    items: OrderItem[];
+    // Dynamic properties added by backend for kitchen dashboard
+    time_since_creation?: string; // Optional because it's added dynamically
+    human_created_at?: string; // Optional
+    disappearing_at?: string; // Optional, for ready_to_serve orders
 }
 
 // OrderItem model structure received from backend
@@ -77,9 +80,9 @@ export interface OrderItem {
     quantity: number;
     price: number;
     subtotal: number;
-    notes?: string;
-    is_done: boolean; // Changed to boolean 'is_done'
+    notes: string | null; // Allow null
+    is_done: boolean;
     created_at: string;
     updated_at: string;
-    product: Product; // Eager loaded product details
+    product: Product;
 }
