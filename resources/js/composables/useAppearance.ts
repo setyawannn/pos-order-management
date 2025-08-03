@@ -9,11 +9,11 @@ export function updateTheme(value: Appearance) {
 
     if (value === 'system') {
         const mediaQueryList = window.matchMedia('(prefers-color-scheme: light)');
-        const systemTheme = mediaQueryList.matches ? 'dark' : 'light';
+        const systemTheme = mediaQueryList.matches ? 'light' : 'light';
 
-        document.documentElement.classList.toggle('dark', systemTheme === 'dark');
+        document.documentElement.classList.toggle('light', systemTheme === 'light');
     } else {
-        document.documentElement.classList.toggle('dark', value === 'dark');
+        document.documentElement.classList.toggle('light', value === 'light');
     }
 }
 

@@ -3,15 +3,15 @@ import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createPinia } from 'pinia';
+import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import Toast, { PluginOptions, POSITION } from 'vue-toastification';
 import 'vue-toastification/dist/index.css';
 import { ZiggyVue } from 'ziggy-js';
 import { initializeTheme } from './composables/useAppearance';
-import { createPersistedState } from './plugins/pinia-persistence';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'POS Application';
 const options: PluginOptions = {
     position: POSITION.TOP_RIGHT,
     timeout: 3000,
@@ -19,7 +19,7 @@ const options: PluginOptions = {
     newestOnTop: true,
 };
 const pinia = createPinia();
-pinia.use(createPersistedState());
+pinia.use(piniaPluginPersistedState);
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

@@ -7,21 +7,20 @@ import { useToast } from 'vue-toastification';
 export const useOrderHistoryStore = defineStore('orderHistory', () => {
     const toast = useToast();
     const orders = ref<StoredOrder[]>([]);
-    const isLoading = ref(false);
+    // Changed isLoading from boolean to a Set to track multiple loading order codes
+    const loadingOrders = ref<Set<string>>(new Set());
 
     // Getters
     const recentOrders = computed(() => orders.value.slice(0, 5));
     const hasOrders = computed(() => orders.value.length > 0);
 
+    // New getter to check if a specific order is loading
+    const isOrderLoading = computed(() => (orderCode: string) => loadingOrders.value.has(orderCode));
+
     // Actions
     const loadOrders = () => {
-        // This is the method that will be called to refresh the orders list
         orders.value = orderStorage.getOrders();
     };
-
-    // We no longer need 'addOrder' action in this store directly,
-    // as orderStorage.saveOrder will be called by cartStore,
-    // and then we just call loadOrders to refresh.
 
     const getOrderByCode = (orderCode: string): StoredOrder | null => {
         return orderStorage.getOrderByCode(orderCode);
@@ -30,12 +29,14 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
     const clearAllOrders = () => {
         orderStorage.clearOrders();
         orders.value = [];
-        toast.info('Order history cleared'); // Add toast here too
+        toast.info('Order history cleared');
     };
 
     // Fetch latest status and full details from server
     const refreshOrderDetails = async (orderCode: string) => {
-        isLoading.value = true;
+        // Add the orderCode to the loading set
+        loadingOrders.value.add(orderCode);
+
         try {
             const response = await fetch(route('api.orders.status', { orderCode: orderCode }));
             const result = await response.json();
@@ -51,12 +52,12 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
                     created_at: result.data.order.created_at,
                     items: result.data.order.items.map((item: any) => ({
                         id: item.id,
-                        product_name: item.product.name,
+                        product_name: item.product?.name || 'Unknown Product',
                         quantity: item.quantity,
                         price: parseFloat(item.price),
                         subtotal: parseFloat(item.subtotal),
                         notes: item.notes,
-                        is_done: item.is_done,
+                        is_done: !!item.is_done,
                     })),
                 };
 
@@ -73,7 +74,8 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
             toast.error('Network error while refreshing order status.');
             console.error('Network error while refreshing order status:', error);
         } finally {
-            isLoading.value = false;
+            // Remove the orderCode from the loading set when done (success or error)
+            loadingOrders.value.delete(orderCode);
         }
         return null;
     };
@@ -84,14 +86,15 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
     return {
         // State
         orders,
-        isLoading,
+        // isLoading is now managed via loadingOrders Set
 
         // Getters
         recentOrders,
         hasOrders,
+        isOrderLoading, // Expose the new getter
 
         // Actions
-        loadOrders, // Expose loadOrders
+        loadOrders,
         getOrderByCode,
         clearAllOrders,
         refreshOrderDetails,

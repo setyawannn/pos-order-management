@@ -63,10 +63,12 @@
                                 </span>
                                 <button
                                     @click="refreshOrderDetails(order.order_code)"
-                                    :disabled="orderHistoryStore.isLoading"
+                                    :disabled="orderHistoryStore.isOrderLoading(order.order_code)"
                                     class="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50"
                                 >
-                                    <RefreshCw :class="['mr-1 inline h-3 w-3', orderHistoryStore.isLoading ? 'animate-spin' : '']" />
+                                    <RefreshCw
+                                        :class="['mr-1 inline h-3 w-3', orderHistoryStore.isOrderLoading(order.order_code) ? 'animate-spin' : '']"
+                                    />
                                     Refresh
                                 </button>
                             </div>
@@ -112,23 +114,39 @@
             <!-- Footer -->
             <div v-if="orderHistoryStore.hasOrders" class="flex-shrink-0 border-t border-gray-200 px-4 py-3">
                 <button
-                    @click="clearAllOrders"
+                    @click="showClearAllModal = true"
                     class="w-full rounded-lg py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 active:scale-95"
                 >
                     Clear All Orders
                 </button>
             </div>
         </div>
+
+        <ConfirmationModal
+            :show="showClearAllModal"
+            title="Clear Order History?"
+            message="Are you sure you want to clear all your past orders? This action cannot be undone."
+            confirmText="Clear History"
+            cancelText="Cancel"
+            confirmVariant="destructive"
+            icon="AlertTriangle"
+            iconClass="text-orange-500"
+            confirmIcon="History"
+            @confirm="confirmClearAllOrders"
+            @cancel="showClearAllModal = false"
+        />
     </Teleport>
 </template>
 
 <script setup lang="ts">
+import ConfirmationModal from '@/components/reusable/ConfirmationModal.vue'; // Import your modal
 import PriceDisplay from '@/components/reusable/PriceDisplay.vue';
-import type { StoredOrder } from '@/services/orderStorage'; // Only need StoredOrder here
+import type { StoredOrder } from '@/services/orderStorage';
 import { useCartStore } from '@/stores/cartStore';
 import { useOrderHistoryStore } from '@/stores/orderHistoryStore';
 import { router } from '@inertiajs/vue3';
-import { RefreshCw, ShoppingBag, X } from 'lucide-vue-next';
+import { RefreshCw, ShoppingBag, X } from 'lucide-vue-next'; // Import History icon
+import { ref } from 'vue';
 import { useToast } from 'vue-toastification';
 
 interface Props {
@@ -143,6 +161,8 @@ const emit = defineEmits<{
 const toast = useToast();
 const orderHistoryStore = useOrderHistoryStore();
 const cartStore = useCartStore();
+
+const showClearAllModal = ref(false); // Reactive state for modal visibility
 
 const closeDrawer = () => {
     emit('update:open', false);
@@ -209,7 +229,7 @@ const reorderItems = (order: StoredOrder) => {
     cartStore.clearCart();
     order.items.forEach((item) => {
         cartStore.addItem({
-            id: item.id, // This is still the OrderItem ID. You'd ideally use Product ID here.
+            id: item.id,
             name: item.product_name,
             price: item.price,
         });
@@ -222,10 +242,8 @@ const reorderItems = (order: StoredOrder) => {
     }, 500);
 };
 
-const clearAllOrders = () => {
-    if (confirm('Are you sure you want to clear all order history? This cannot be undone.')) {
-        orderHistoryStore.clearAllOrders();
-        toast.info('Order history cleared');
-    }
+const confirmClearAllOrders = () => {
+    showClearAllModal.value = false;
+    orderHistoryStore.clearAllOrders();
 };
 </script>

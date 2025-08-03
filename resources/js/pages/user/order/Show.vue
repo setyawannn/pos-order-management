@@ -11,10 +11,10 @@
                     <h1 class="-ml-10 flex-grow text-center text-xl font-bold text-gray-900">Order #{{ order.order_code }}</h1>
                     <button
                         @click="refreshOrder"
-                        :disabled="orderHistoryStore.isLoading"
+                        :disabled="orderHistoryStore.isOrderLoading(order.order_code)"
                         class="rounded-lg p-2 text-blue-600 hover:bg-blue-50 disabled:opacity-50"
                     >
-                        <RefreshCw :class="['h-5 w-5', orderHistoryStore.isLoading ? 'animate-spin' : '']" />
+                        <RefreshCw :class="['h-5 w-5', orderHistoryStore.isOrderLoading(order.order_code) ? 'animate-spin' : '']" />
                     </button>
                 </div>
 
@@ -143,30 +143,19 @@ const goBack = () => {
 };
 
 const refreshOrder = async () => {
-    // Use the store's refresh method which updates localStorage and the store's state
-    const updatedOrder = await orderHistoryStore.refreshOrderDetails(currentOrder.value.order_code);
-    if (updatedOrder) {
-        // If successful, Inertia will re-render the page with new props if the order has changed
-        // Otherwise, the local 'currentOrder' (if you were using a ref directly) would be updated
-        // Since Inertia passes props, a server-side redirect will handle the update.
-        // If you prefer to update the current page without full Inertia reload:
-        // This is more complex and usually involves Inertia's `reload` or patching the page props.
-        // For simplicity with full Inertia pages, a `router.visit` back to self or `router.reload` is often done.
-        // However, the `orderHistoryStore.refreshOrderDetails` already updates localStorage,
-        // so if this component uses a reactive reference to localStorage (which it doesn't directly now),
-        // it would update. Given this is an Inertia page, the props are set initially.
-        // For real-time updates without a full page reload, you'd likely use WebSockets or Poll the API more frequently.
+    // Pass the current order's code to refresh only that order
+    await orderHistoryStore.refreshOrderDetails(currentOrder.value.order_code);
 
-        // For now, let's just re-fetch the Inertia page if the status might have changed,
-        // to ensure the props are up-to-date with the latest from the backend.
-        router.visit(route('user.order.show', currentOrder.value.order_code), {
-            preserveScroll: true,
-            preserveState: false, // Ensure fresh props are fetched
-            onFinish: () => {
-                // Toast handled by the store method
-            },
-        });
-    }
+    // After refresh, the Inertia page needs to be re-rendered with the new props
+    // The simplest way to do this is to visit the same route again,
+    // forcing Inertia to fetch fresh props.
+    router.visit(route('user.order.show', currentOrder.value.order_code), {
+        preserveScroll: true,
+        preserveState: false, // Force fetch fresh props
+        onFinish: () => {
+            // Toast handled by the store method
+        },
+    });
 };
 
 const formatDate = (dateString: string) => {

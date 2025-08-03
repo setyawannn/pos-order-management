@@ -55,7 +55,7 @@ export const useCartStore = defineStore(
 
             if (existingItemIndex > -1) {
                 items.value[existingItemIndex].quantity += 1;
-                toast.success(`Added another ${product.name} to cart`);
+                // toast.success(`Added another ${product.name} to cart`);
             } else {
                 items.value.push({
                     id: product.id,
@@ -65,7 +65,7 @@ export const useCartStore = defineStore(
                     quantity: 1,
                     notes: '',
                 });
-                toast.success(`${product.name} added to cart`);
+                // toast.success(`${product.name} added to cart`);
             }
         };
 
@@ -242,7 +242,6 @@ export const useCartStore = defineStore(
         persist: {
             key: 'pos-cart-store',
             storage: localStorage,
-            paths: ['items', 'orderType', 'tableNumber', 'customerName', 'customerEmail', 'customerPhone', 'orderNotes'],
-        } as any,
+        },
     },
 );

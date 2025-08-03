@@ -10,7 +10,7 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
                         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500">
-                            <span class="text-lg font-bold text-white">JR</span>
+                            <span class="text-lg font-bold text-white">CR</span>
                         </div>
                         <div>
                             <h1 class="text-lg font-semibold text-gray-900">Cerita Sena</h1>
