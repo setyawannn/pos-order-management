@@ -20,73 +20,78 @@
         <!-- Card Body - Order Items (ToDo List) -->
         <div class="border-b border-gray-200 p-4">
             <h4 class="mb-3 text-sm font-semibold text-gray-800">Items:</h4>
-            <div class="space-y-3">
+            <!-- Scrollable container for items within a card -->
+            <div class="scrollbar-hide -mr-2 max-h-48 space-y-3 overflow-y-auto pr-2">
                 <div v-for="item in order.items" :key="item.id" class="flex items-start justify-between">
-                    <div class="flex-1 pr-2">
-                        <p class="text-sm font-medium text-gray-900">{{ item.quantity }}x {{ item.product.name }}</p>
-                        <p v-if="item.notes" class="text-xs text-gray-600 italic">Note: {{ item.notes }}</p>
+                    <div class="flex flex-1 items-center pr-2">
+                        <!-- Checklist Icon next to item name, always visible if done -->
+                        <CheckCircle v-if="item.is_done" class="mr-1.5 h-4 w-4 text-green-500" />
+                        <p class="text-sm leading-tight font-medium text-gray-900">{{ item.quantity }}x {{ item.product.name }}</p>
                     </div>
-                    <div v-if="order.status === 'in_progress' || order.status === 'in_queue'" class="ml-2 flex-shrink-0">
+                    <div class="ml-2 flex-shrink-0">
+                        <!-- Toggle Button: Only clickable/visible as a button if order.status is 'in_progress' -->
                         <button
+                            v-if="order.status === 'in_progress'"
                             @click="$emit('toggle-item-done', item)"
                             :class="[
-                                'rounded-md px-2 py-1 text-xs font-semibold transition-colors',
-                                item.is_done ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-blue-100 text-blue-800 hover:bg-blue-200',
+                                'flex items-center justify-center rounded-md px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors',
+                                item.is_done ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-red-100 text-red-800 hover:bg-red-200',
                             ]"
                         >
-                            {{ item.is_done ? itemStatusLabels.done : itemStatusLabels.pending }}
+                            <!-- Icon inside button depends on is_done status -->
+                            <component :is="item.is_done ? CheckCircle : CircleX" class="mr-1 h-3.5 w-3.5" />
+                            <span>{{ itemStatusLabels[item.is_done.toString()] }}</span>
                         </button>
-                    </div>
-                    <div v-else class="ml-2 flex-shrink-0">
+                        <!-- Non-clickable Status Display: For other order statuses (in_queue, ready_to_serve, etc.) -->
                         <span
+                            v-else
                             :class="[
-                                'rounded-md px-2 py-1 text-xs font-semibold',
-                                item.is_done ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600', // Show status but not clickable
+                                'flex items-center justify-center rounded-md px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap',
+                                item.is_done ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600',
                             ]"
                         >
-                            {{ item.is_done ? itemStatusLabels.done : itemStatusLabels.pending }}
+                            <!-- Icon inside span depends on is_done status -->
+                            <component :is="item.is_done ? CheckCircle : CircleX" class="mr-1 h-3.5 w-3.5" />
+                            <span>{{ itemStatusLabels[item.is_done.toString()] }}</span>
                         </span>
                     </div>
                 </div>
             </div>
+            <p v-if="order.notes" class="mt-3 border-t border-gray-100 pt-3 text-xs text-gray-600 italic">Order Notes: {{ order.notes }}</p>
         </div>
 
         <!-- Card Footer - Status Update Buttons -->
         <div class="flex flex-col space-y-2 p-4">
-            <!-- Only show for in_queue and in_progress -->
+            <!-- Start Cooking Button for in_queue orders -->
             <template v-if="order.status === 'in_queue'">
                 <button
-                    @click="$emit('update-order-status', 'in_progress')"
-                    class="w-full rounded-lg bg-blue-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    @click="$emit('update-order-status', order.id, 'in_progress')"
+                    class="w-full rounded-lg bg-blue-500 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     Start Cooking
                 </button>
             </template>
 
+            <!-- Ready to Serve Button for in_progress orders -->
             <template v-else-if="order.status === 'in_progress'">
                 <button
-                    @click="$emit('update-order-status', 'ready_to_serve')"
+                    @click="$emit('update-order-status', order.id, 'ready_to_serve')"
                     :disabled="!allOrderItemsDone"
-                    class="w-full rounded-lg bg-green-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    class="w-full rounded-lg bg-green-500 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     Ready to Serve ({{ doneItemsCount }}/{{ totalItemsCount }})
                 </button>
             </template>
 
-            <!-- Show 'Mark as Served' for ready_to_serve orders -->
-            <template v-else-if="order.status === 'ready_to_serve'">
-                <button
-                    @click="$emit('update-order-status', 'completed')"
-                    class="w-full rounded-lg bg-gray-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-600"
-                >
-                    Mark as Served
-                </button>
-            </template>
+            <!-- Ready to Serve - NO BUTTONS HERE, just display it is ready -->
+            <!-- We deliberately DO NOT include a template for order.status === 'ready_to_serve' here
+                 if we don't want any buttons for that state. The space will collapse. -->
 
+            <!-- Cancel Order Button (visible for all except completed/cancelled/ready_to_serve) -->
             <button
-                v-if="order.status !== 'completed' && order.status !== 'cancelled'"
-                @click="$emit('update-order-status', 'cancelled')"
-                class="w-full rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-100"
+                v-if="order.status !== 'completed' && order.status !== 'cancelled' && order.status !== 'ready_to_serve'"
+                @click="$emit('update-order-status', order.id, 'cancelled')"
+                class="w-full rounded-lg bg-red-50 px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-100"
             >
                 Cancel Order
             </button>
@@ -95,13 +100,14 @@
 </template>
 
 <script setup lang="ts">
-import type { Order } from '@/types'; // Import OrderItem type
+import type { Order } from '@/types';
+import { CheckCircle, CircleX } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Props {
     order: Order;
-    itemStatusLabels: { pending: string; done: string };
-    overallStatusLabels: Record<string, string>; // Overall status labels for consistency
+    itemStatusLabels: Record<string, string>;
+    overallStatusLabels: Record<string, string>;
 }
 
 const props = defineProps<Props>();
@@ -119,3 +125,13 @@ const allOrderItemsDone = computed(() => {
     return doneItemsCount.value === totalItemsCount.value;
 });
 </script>
+
+<style scoped>
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+</style>

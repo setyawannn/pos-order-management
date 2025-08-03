@@ -28,6 +28,7 @@
                         :orders="groupedOrders.in_progress"
                         border-class="border-orange-500"
                         :item-status-labels="itemStatusLabels"
+                        :overall-status-labels="overallStatusLabels"
                         @toggle-item-done="toggleItemDone"
                         @update-order-status="updateOrderStatus"
                     />
@@ -39,6 +40,7 @@
                         :orders="groupedOrders.in_queue"
                         border-class="border-blue-500"
                         :item-status-labels="itemStatusLabels"
+                        :overall-status-labels="overallStatusLabels"
                         @toggle-item-done="toggleItemDone"
                         @update-order-status="updateOrderStatus"
                     />
@@ -50,6 +52,7 @@
                         :orders="groupedOrders.ready_to_serve"
                         border-class="border-green-500"
                         :item-status-labels="itemStatusLabels"
+                        :overall-status-labels="overallStatusLabels"
                         @toggle-item-done="toggleItemDone"
                         @update-order-status="updateOrderStatus"
                     />
@@ -61,13 +64,12 @@
 
 <script setup lang="ts">
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import type { Order, OrderItem } from '@/types'; // Ensure Order and OrderItem are imported
+import type { Order, OrderItem } from '@/types';
 import { RefreshCw } from 'lucide-vue-next';
-import { onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useToast } from 'vue-toastification';
 import OrderColumn from './components/OrderColumn.vue';
 
-// Define types for grouped orders for better type safety
 interface GroupedOrders {
     in_progress: Order[];
     in_queue: Order[];
@@ -76,7 +78,7 @@ interface GroupedOrders {
 
 interface Props {
     initialOrders: GroupedOrders;
-    statusOptions: Record<string, string>; // Overall order status labels (not directly used here but useful)
+    statusOptions: Record<string, string>;
 }
 
 const props = defineProps<Props>();
@@ -86,13 +88,17 @@ const groupedOrders = ref<GroupedOrders>(props.initialOrders);
 const isFetchingOrders = ref(false);
 
 const itemStatusLabels = {
-    pending: 'In Progress', // is_done = false
-    done: 'Done', // is_done = true
+    false: 'In Progress',
+    true: 'Done',
 };
 
+const overallStatusLabels = computed(() => {
+    return props.statusOptions;
+});
+
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
-const POLLING_INTERVAL = 15000; // Poll every 15 seconds
-const READY_TO_SERVE_DISPLAY_DURATION = 10000; // 10 seconds for "Ready to Serve" orders to disappear
+const POLLING_INTERVAL = 15000;
+// READY_TO_SERVE_DISPLAY_DURATION is removed
 
 const fetchOrders = async () => {
     isFetchingOrders.value = true;
@@ -101,34 +107,14 @@ const fetchOrders = async () => {
         const result = await response.json();
 
         if (response.ok && result.success) {
-            const newGroupedOrders: GroupedOrders = {
-                in_progress: [],
-                in_queue: [],
-                ready_to_serve: [],
+            const fetchedGroupedOrders: GroupedOrders = result.orders;
+            // The disappearing_at logic is removed from here
+            // Instead, backend will send only orders in current kitchen statuses
+            groupedOrders.value = {
+                in_progress: fetchedGroupedOrders.in_progress || [],
+                in_queue: fetchedGroupedOrders.in_queue || [],
+                ready_to_serve: fetchedGroupedOrders.ready_to_serve || [],
             };
-
-            // Process incoming orders to add disappearing_at if not present
-            Object.keys(result.orders).forEach((statusKey) => {
-                (result.orders[statusKey as keyof GroupedOrders] as Order[]).forEach((order) => {
-                    if (statusKey === 'ready_to_serve' && !order.disappearing_at) {
-                        // If backend didn't set disappearing_at, set it now for client-side timing
-                        // This is a fallback, ideally backend would manage this consistently
-                        order.disappearing_at = new Date(new Date().getTime() + READY_TO_SERVE_DISPLAY_DURATION).toISOString();
-                    }
-                    newGroupedOrders[statusKey as keyof GroupedOrders].push(order);
-                });
-            });
-
-            // Client-side filtering for orders that should disappear
-            Object.keys(newGroupedOrders).forEach((statusKey) => {
-                if (statusKey === 'ready_to_serve') {
-                    newGroupedOrders.ready_to_serve = newGroupedOrders.ready_to_serve.filter((order) => {
-                        return order.disappearing_at && new Date() < new Date(order.disappearing_at);
-                    });
-                }
-            });
-
-            groupedOrders.value = newGroupedOrders;
         } else {
             toast.error(result.message || 'Failed to fetch orders.');
         }
@@ -147,7 +133,7 @@ const toggleItemDone = async (orderItem: OrderItem) => {
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
-                'X-CSRF-TOKEN': (window as any).Laravel.csrfToken, // Ensure CSRF token is sent
+                'X-CSRF-TOKEN': (window as any).Laravel.csrfToken,
             },
         });
         const result = await response.json();
@@ -164,15 +150,14 @@ const toggleItemDone = async (orderItem: OrderItem) => {
     }
 };
 
-const updateOrderStatus = async (order: Order, newStatus: string) => {
-    // This function signature is from your working code
+const updateOrderStatus = async (orderId: number, newStatus: string) => {
     try {
-        const response = await fetch(route('api.kitchen.orders.update-status', { order: order.id }), {
+        const response = await fetch(route('api.kitchen.orders.update-status', { order: orderId }), {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
-                'X-CSRF-TOKEN': (window as any).Laravel.csrfToken, // Ensure CSRF token is sent
+                'X-CSRF-TOKEN': (window as any).Laravel.csrfToken,
             },
             body: JSON.stringify({ status: newStatus }),
         });
@@ -180,12 +165,8 @@ const updateOrderStatus = async (order: Order, newStatus: string) => {
 
         if (response.ok && result.success) {
             toast.success(result.message);
-            // If order becomes 'ready_to_serve', apply disappearing logic on frontend
-            if (newStatus === 'ready_to_serve') {
-                result.order.disappearing_at = new Date(new Date().getTime() + READY_TO_SERVE_DISPLAY_DURATION).toISOString();
-            }
-            // Re-fetch all orders to ensure correct sorting and removal
-            await fetchOrders();
+            // No disappearing_at logic here, as backend will handle completion
+            await fetchOrders(); // Full refresh to get latest statuses from backend
         } else {
             toast.error(result.message || 'Failed to update order status.');
         }
@@ -208,14 +189,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Responsive grid for columns */
 .auto-cols-max {
     grid-auto-columns: max-content;
 }
-@media (min-width: 768px) {
-    /* iPad / Tablet breakpoint */
-    .grid-cols-auto-fill-minmax-320 {
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    }
+.grid {
+    display: grid;
+    grid-auto-flow: column;
 }
 </style>

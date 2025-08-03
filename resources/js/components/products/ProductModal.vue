@@ -255,7 +255,7 @@ const handleSubmit = () => {
                     <div class="flex flex-col">
                         <Label for="stock-managed">Stock Management</Label>
                         <div class="mt-2 flex items-center gap-2">
-                            <Switch id="stock-managed" v-model:checked="form.is_stock_managed" />
+                            <Switch id="stock-managed" v-model="form.is_stock_managed" :checked="form.is_stock_managed" />
                             <span>{{ form.is_stock_managed ? 'Managed' : 'Not Managed' }}</span>
                         </div>
                         <p v-if="form.errors.is_stock_managed" class="mt-1 text-sm text-red-500">{{ form.errors.is_stock_managed }}</p>
@@ -271,7 +271,7 @@ const handleSubmit = () => {
                 <div>
                     <Label for="is_active">Active on Menu</Label>
                     <div class="mt-2 flex items-center gap-2">
-                        <Switch id="is_active" v-model:checked="form.is_active" />
+                        <Switch id="is_active" v-model="form.is_active" :checked="form.is_active" />
                         <span>{{ form.is_active ? 'Visible' : 'Hidden' }}</span>
                     </div>
                     <p v-if="form.errors.is_active" class="mt-1 text-sm text-red-500">{{ form.errors.is_active }}</p>
