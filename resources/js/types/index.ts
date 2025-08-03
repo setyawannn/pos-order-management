@@ -86,3 +86,27 @@ export interface OrderItem {
     updated_at: string;
     product: Product;
 }
+
+export interface StoredOrderItem {
+    id: number; // This is the OrderItem ID
+    product_id: number; // The actual Product ID
+    product_name: string;
+    image?: string | null; // Image URL for displaying in cart/history
+    quantity: number;
+    price: number;
+    subtotal: number;
+    notes?: string | null;
+    is_done: boolean;
+}
+
+// Corrected StoredOrder for localStorage
+export interface StoredOrder {
+    order_code: string;
+    customer_name: string;
+    total_amount: number;
+    status: string;
+    order_type: string;
+    table_number?: string | null;
+    created_at: string;
+    items: StoredOrderItem[];
+}

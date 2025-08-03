@@ -141,7 +141,7 @@
 <script setup lang="ts">
 import ConfirmationModal from '@/components/reusable/ConfirmationModal.vue'; // Import your modal
 import PriceDisplay from '@/components/reusable/PriceDisplay.vue';
-import type { StoredOrder } from '@/services/orderStorage';
+import type { StoredOrderInternal } from '@/services/orderStorage';
 import { useCartStore } from '@/stores/cartStore';
 import { useOrderHistoryStore } from '@/stores/orderHistoryStore';
 import { router } from '@inertiajs/vue3';
@@ -225,12 +225,13 @@ const viewOrderDetails = (orderCode: string) => {
     closeDrawer();
 };
 
-const reorderItems = (order: StoredOrder) => {
+const reorderItems = (order: StoredOrderInternal) => {
     cartStore.clearCart();
     order.items.forEach((item) => {
         cartStore.addItem({
             id: item.id,
             name: item.product_name,
+            image: item.image || '',
             price: item.price,
         });
     });

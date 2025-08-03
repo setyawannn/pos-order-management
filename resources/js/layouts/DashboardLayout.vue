@@ -1,7 +1,7 @@
 <!-- resources/js/layouts/DashboardLayout.vue -->
 <template>
-    <div class="flex min-h-screen bg-slate-50">
-        <aside class="flex w-32 flex-col items-center border-r border-slate-200 bg-white">
+    <div class="flex h-screen bg-slate-50">
+        <aside class="flex h-screen w-32 flex-col items-center border-r border-slate-200 bg-white">
             <div class="border-b border-slate-200 p-3">
                 <div class="flex h-16 w-16 items-center justify-center rounded-lg bg-red-500">
                     <Store class="h-6 w-6 text-white" />
@@ -29,7 +29,9 @@
         </aside>
 
         <main class="flex-1 overflow-y-auto">
-            <slot />
+            <div class="h-fit">
+                <slot />
+            </div>
         </main>
 
         <ConfirmationModal

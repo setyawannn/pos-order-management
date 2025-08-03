@@ -1,12 +1,12 @@
 // resources/js/stores/orderHistoryStore.ts
-import { orderStorage, type StoredOrder } from '@/services/orderStorage';
+import { orderStorage, type StoredOrderInternal } from '@/services/orderStorage';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { useToast } from 'vue-toastification';
 
 export const useOrderHistoryStore = defineStore('orderHistory', () => {
     const toast = useToast();
-    const orders = ref<StoredOrder[]>([]);
+    const orders = ref<StoredOrderInternal[]>([]);
     // Changed isLoading from boolean to a Set to track multiple loading order codes
     const loadingOrders = ref<Set<string>>(new Set());
 
@@ -22,7 +22,7 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
         orders.value = orderStorage.getOrders();
     };
 
-    const getOrderByCode = (orderCode: string): StoredOrder | null => {
+    const getOrderByCode = (orderCode: string): StoredOrderInternal | null => {
         return orderStorage.getOrderByCode(orderCode);
     };
 
@@ -51,8 +51,9 @@ export const useOrderHistoryStore = defineStore('orderHistory', () => {
                     table_number: result.data.order.table_number,
                     created_at: result.data.order.created_at,
                     items: result.data.order.items.map((item: any) => ({
-                        id: item.id,
+                        id: item.product_id,
                         product_name: item.product?.name || 'Unknown Product',
+                        image: item.product?.image || '',
                         quantity: item.quantity,
                         price: parseFloat(item.price),
                         subtotal: parseFloat(item.subtotal),
