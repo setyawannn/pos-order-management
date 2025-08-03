@@ -28,6 +28,9 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
     })
+    ->withProviders([
+        App\Providers\RouteServiceProvider::class
+    ])
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

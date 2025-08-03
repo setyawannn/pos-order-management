@@ -11,8 +11,11 @@ use Inertia\Inertia;
 Route::get('/', [HomeController::class, 'index'])->name('user.home');
 
 Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
-Route::get('/order/{orderCode}/success', [OrderController::class, 'success'])->name('user.order.success');
-Route::get('/order/{orderCode}', [OrderController::class, 'show'])->name('user.order.show');
+Route::get('/order/{orderCode}/success', [OrderController::class, 'success'])
+    ->name('user.order.success');
+Route::get('/order/{orderCode}', [OrderController::class, 'show'])
+    ->middleware('throttle:user-order-status')
+    ->name('user.order.show');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
