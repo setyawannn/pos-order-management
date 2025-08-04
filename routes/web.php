@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\KitchenController;
 use App\Http\Controllers\Admin\ProductController;
@@ -24,6 +25,9 @@ Route::get('dashboard', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('categories', CategoryController::class);
+        Route::resource('orders', AdminOrderController::class)
+            ->only(['index', 'show', 'update', 'destroy'])
+            ->middleware('role:cashier,admin,owner');
         Route::resource('products', ProductController::class);
         Route::get('kitchen', [KitchenController::class, 'index'])
             ->name('kitchen.index')
