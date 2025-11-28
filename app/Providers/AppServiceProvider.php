@@ -34,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
             Model::preventSilentlyDiscardingAttributes();
         }
 
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         Inertia::share([
             'flash' => function () {
                 return [
