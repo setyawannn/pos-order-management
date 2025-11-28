@@ -14,6 +14,14 @@ if [ "$role" = "app" ]; then
     php artisan view:cache
 
     echo "run migrations..."
+    # Wait for database connection
+    echo "Waiting for database connection..."
+    while ! php artisan db:monitor > /dev/null 2>&1; do
+        echo "Database is not ready yet. Waiting..."
+        sleep 2
+    done
+    echo "Database is ready!"
+
     php artisan migrate --force
 
     echo "📦 Starting PHP-FPM..."
