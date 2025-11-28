@@ -41,18 +41,18 @@ RUN echo 'server { \
     access_log /var/log/nginx/access.log; \
     root /var/www/html/public; \
     location / { \
-        try_files $uri $uri/ /index.php?$query_string; \
+    try_files $uri $uri/ /index.php?$query_string; \
     } \
     location ~ \.php$ { \
-        try_files $uri =404; \
-        fastcgi_split_path_info ^(.+\.php)(/.+)$; \
-        fastcgi_pass 127.0.0.1:9000; \
-        fastcgi_index index.php; \
-        include fastcgi_params; \
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
-        fastcgi_param PATH_INFO $fastcgi_path_info; \
+    try_files $uri =404; \
+    fastcgi_split_path_info ^(.+\.php)(/.+)$; \
+    fastcgi_pass 127.0.0.1:9000; \
+    fastcgi_index index.php; \
+    include fastcgi_params; \
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
+    fastcgi_param PATH_INFO $fastcgi_path_info; \
     } \
-}' > /etc/nginx/http.d/default.conf
+    }' > /etc/nginx/http.d/default.conf
 
 # Copy Project Files
 COPY . .
@@ -70,7 +70,7 @@ RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Copy Entrypoint (Pastikan file entrypoint.sh sudah ada seperti panduan sebelumnya)
 COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN dos2unix /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
