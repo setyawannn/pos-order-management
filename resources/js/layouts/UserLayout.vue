@@ -18,7 +18,7 @@
                             <span class="text-lg font-bold text-white">CR</span>
                         </div>
                         <div>
-                            <h1 class="text-lg font-semibold text-gray-900">Cerita Sena</h1>
+                            <h1 class="text-lg font-semibold text-gray-900">Ciboox</h1>
                             <p class="text-sm text-gray-500">{{ currentDate }}</p>
                         </div>
                     </div>

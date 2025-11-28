@@ -21,7 +21,29 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request)
     {
         try {
+
             $order = $this->orderService->createOrder($request);
+            // dd($order->toArray());
+
+            \Midtrans\Config::$serverKey = config('midtrans.server_key');
+            \Midtrans\Config::$isProduction = config('midtrans.is_production');
+            \Midtrans\Config::$isSanitized = true;
+            \Midtrans\Config::$is3ds = true;
+
+            $params = array(
+                'transaction_details' => array(
+                    'order_id' => $order->id,
+                    'gross_amount' => $order->total_amount,
+                ),
+                'customer_details' => array(
+                    'first_name' => $order->customer_name,
+                    'last_name' => '',
+                    'email' => $order->customer_email,
+                    'phone' => $order->customer_phone,
+                ),
+            );
+
+            // $snapToken = \Midtrans\Snap::getSnapToken($params);
 
             return response()->json([
                 'success' => true,
