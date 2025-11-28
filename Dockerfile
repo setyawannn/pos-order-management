@@ -7,11 +7,10 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# --- Stage 2: Build Backend & Serve (MariaDB Optimized) ---
+# --- Stage 2: Build Backend & Serve ---
 FROM php:8.3-fpm-alpine
 
 # Install system dependencies
-# Kita ganti postgresql-dev dengan client mysql (opsional untuk debug)
 RUN apk add --no-cache \
     nginx \
     libpng-dev \
@@ -22,8 +21,7 @@ RUN apk add --no-cache \
     unzip \
     icu-dev
 
-# Install PHP Extensions
-# HANYA install pdo_mysql (kompatibel penuh dengan MariaDB)
+# Install PHP Extensions (MariaDB Compatible)
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl
 
 # Install Composer
@@ -32,7 +30,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Setup Working Directory
 WORKDIR /var/www/html
 
-# Setup Nginx Configuration (Sama seperti sebelumnya)
+# --- CONFIG NGINX (PERMANEN) ---
+# Kita masukkan settingan Buffer & Upload Size langsung di sini
+# Agar tidak kena error 502 atau 413 lagi saat redeploy
 RUN echo 'server { \
     listen 80; \
     index index.php index.html; \
@@ -40,6 +40,14 @@ RUN echo 'server { \
     error_log  /var/log/nginx/error.log; \
     access_log /var/log/nginx/access.log; \
     root /var/www/html/public; \
+    \
+    client_max_body_size 100M; \
+    fastcgi_buffers 16 16k; \
+    fastcgi_buffer_size 32k; \
+    proxy_buffer_size 128k; \
+    proxy_buffers 4 256k; \
+    proxy_busy_buffers_size 256k; \
+    \
     location / { \
     try_files $uri $uri/ /index.php?$query_string; \
     } \
@@ -64,18 +72,16 @@ COPY --from=frontend /app/public/build/manifest.json public/build/manifest.json
 # Install PHP Dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Fix Permissions
+# Fix Permissions Awal
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Copy Entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
 
-# --- TAMBAHKAN BARIS AJAIB INI ---
-# Membersihkan karakter Windows (\r) agar Linux bisa membacanya
+# --- FIX WINDOWS LINE ENDINGS ---
+# Ini mencegah error "no such file" atau "exec format error"
 RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh
-
-# Lanjut permission execute
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80
