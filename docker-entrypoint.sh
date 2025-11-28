@@ -1,34 +1,34 @@
-#!/bin/bash
-
-# Exit on fail
+#!/bin/sh
 set -e
 
-# Role setup (jika ada queue worker nanti bisa disesuaikan)
-role=${CONTAINER_ROLE:-app}
+# Setup untuk memastikan database siap
+echo "🔄 Checking database connection..."
 
-if [ "$role" = "app" ]; then
-    echo "🚀 Caching configuration..."
-    php artisan optimize:clear
-    php artisan config:cache
-    php artisan route:cache
-    php artisan view:cache
+# Loop sederhana menunggu database siap (max 30 detik)
+i=0
+while ! php -r "try { new PDO('mysql:host='.getenv('DB_HOST').';port='.getenv('DB_PORT'), getenv('DB_USERNAME'), getenv('DB_PASSWORD')); } catch (PDOException \$e) { exit(1); }" > /dev/null 2>&1; do
+    if [ $i -ge 30 ]; then
+        echo "❌ Database connection timed out!"
+        exit 1
+    fi
+    echo "⏳ Waiting for database to be ready..."
+    sleep 1
+    i=$((i+1))
+done
 
-    echo "run migrations..."
-    # Wait for database connection
-    echo "Waiting for database connection..."
-    while ! php artisan db:monitor > /dev/null 2>&1; do
-        echo "Database is not ready yet. Waiting..."
-        sleep 2
-    done
-    echo "Database is ready!"
+echo "✅ Database connection established!"
 
-    php artisan migrate --force
+# Lanjut ke perintah Laravel
+echo "🚀 Caching configuration..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 
-    echo "📦 Starting PHP-FPM..."
-    # Menjalankan PHP-FPM
-    php-fpm -D
+echo "🚀 Running migrations..."
+php artisan migrate --force
 
-    # Menjalankan Nginx (di foreground agar container tidak mati)
-    echo "🌐 Starting Nginx..."
-    nginx -g "daemon off;"
-fi
+echo "📦 Starting PHP-FPM..."
+php-fpm -D
+
+echo "🌐 Starting Nginx..."
+nginx -g "daemon off;"

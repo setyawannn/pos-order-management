@@ -68,9 +68,15 @@ RUN composer install --no-dev --optimize-autoloader
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Copy Entrypoint (Pastikan file entrypoint.sh sudah ada seperti panduan sebelumnya)
+# Copy Entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN dos2unix /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
+
+# --- TAMBAHKAN BARIS AJAIB INI ---
+# Membersihkan karakter Windows (\r) agar Linux bisa membacanya
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh
+
+# Lanjut permission execute
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
