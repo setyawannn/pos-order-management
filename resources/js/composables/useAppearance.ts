@@ -7,14 +7,9 @@ export function updateTheme(value: Appearance) {
         return;
     }
 
-    if (value === 'system') {
-        const mediaQueryList = window.matchMedia('(prefers-color-scheme: light)');
-        const systemTheme = mediaQueryList.matches ? 'light' : 'light';
-
-        document.documentElement.classList.toggle('light', systemTheme === 'light');
-    } else {
-        document.documentElement.classList.toggle('light', value === 'light');
-    }
+    // Force light mode
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
 }
 
 const setCookie = (name: string, value: string, days = 365) => {
@@ -54,12 +49,8 @@ export function initializeTheme() {
         return;
     }
 
-    // Initialize theme from saved preference or default to system...
-    const savedAppearance = getStoredAppearance();
-    updateTheme(savedAppearance || 'system');
-
-    // Set up system theme change listener...
-    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    // Always initialize to light
+    updateTheme('light');
 }
 
 const appearance = ref<Appearance>('system');

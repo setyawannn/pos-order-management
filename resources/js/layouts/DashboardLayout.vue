@@ -54,7 +54,7 @@
 import DashboardNavItem from '@/components/dashboard/DashboardNavItem.vue';
 import ConfirmationModal from '@/components/reusable/ConfirmationModal.vue';
 import { router, usePage } from '@inertiajs/vue3';
-import { BarChart3, Home, LogOut, ShoppingCart, Store, Users, UtensilsCrossed } from 'lucide-vue-next';
+import { BarChart3, Home, LogOut, Package, ShoppingCart, Store, Users, UtensilsCrossed } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useToast } from 'vue-toastification';
 
@@ -69,11 +69,10 @@ const page = usePage();
 const currentUrl = computed<string>(() => page.url);
 
 const navigationItems: NavigationItem[] = [
-    { name: 'Dashboard', urlSegment: '/dashboard', icon: Home },
+    { name: 'Dashboard', urlSegment: '/admin/dashboard', icon: Home },
     { name: 'Order Management', urlSegment: '/admin/orders', icon: ShoppingCart },
+    { name: 'Products', urlSegment: '/admin/products', icon: Package },
     { name: 'Kitchen Orders', urlSegment: '/admin/kitchen', icon: UtensilsCrossed },
-    { name: 'Customers', urlSegment: '/dashboard/customers', icon: Users },
-    { name: 'Analytics', urlSegment: '/dashboard/analytics', icon: BarChart3 },
 ];
 
 const isActive = (navItem: NavigationItem): boolean => {

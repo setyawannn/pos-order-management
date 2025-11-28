@@ -63,7 +63,7 @@ import UserLayout from '@/layouts/UserLayout.vue';
 import { useCartStore } from '@/stores/cartStore';
 import type { Category, Product } from '@/types';
 import { Search } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import CategoryTabs from './components/CategoryTabs.vue';
 import ProductCard from './components/ProductCard.vue';
 
@@ -103,4 +103,14 @@ const handleAddToCart = (product: Product) => {
         image: product.image,
     });
 };
+
+onMounted(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tableNumber = urlParams.get('table_number');
+
+    if (tableNumber) {
+        cartStore.tableNumber = tableNumber;
+        cartStore.setOrderType('dine_in');
+    }
+});
 </script>

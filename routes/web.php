@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\KitchenController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\HomeController;
@@ -18,12 +19,11 @@ Route::get('/order/{orderCode}', [OrderController::class, 'show'])
     ->middleware('throttle:user-order-status')
     ->name('user.order.show');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('dashboard', [DashboardController::class, 'index'])
+            ->name('dashboard')
+            ->middleware('role:admin,owner');
         Route::resource('categories', CategoryController::class);
         Route::resource('orders', AdminOrderController::class)
             ->only(['index', 'show', 'update', 'destroy'])
