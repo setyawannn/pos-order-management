@@ -15,7 +15,7 @@
                             @click="handleLogoClick"
                             class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-red-500 transition-transform active:scale-95"
                         >
-                            <span class="text-lg font-bold text-white">CR</span>
+                            <span class="text-lg font-bold text-white">CB</span>
                         </div>
                         <div>
                             <h1 class="text-lg font-semibold text-gray-900">Ciboox</h1>
