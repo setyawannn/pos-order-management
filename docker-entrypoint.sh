@@ -1,18 +1,23 @@
 #!/bin/sh
 set -e
 
-# Setup untuk memastikan database siap
-echo "🔄 Checking database connection..."
+echo "🔄 Checking database connection to host: $DB_HOST port: $DB_PORT user: $DB_USERNAME"
 
-# Loop sederhana menunggu database siap (max 30 detik)
 i=0
-while ! php -r "try { new PDO('mysql:host='.getenv('DB_HOST').';port='.getenv('DB_PORT'), getenv('DB_USERNAME'), getenv('DB_PASSWORD')); } catch (PDOException \$e) { exit(1); }" > /dev/null 2>&1; do
+while ! php -r "
+    try { 
+        new PDO('mysql:host='.getenv('DB_HOST').';port='.getenv('DB_PORT'), getenv('DB_USERNAME'), getenv('DB_PASSWORD')); 
+    } catch (PDOException \$e) { 
+        fwrite(STDERR, '❌ Error: ' . \$e->getMessage() . PHP_EOL); # Tampilkan error asli
+        exit(1); 
+    }
+"; do
     if [ $i -ge 30 ]; then
-        echo "❌ Database connection timed out!"
+        echo "❌ Database connection timed out! Check your credentials and host."
         exit 1
     fi
-    echo "⏳ Waiting for database to be ready..."
-    sleep 1
+    echo "⏳ Waiting for database..."
+    sleep 2
     i=$((i+1))
 done
 
