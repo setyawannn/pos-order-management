@@ -2,31 +2,28 @@
 FROM node:20-alpine as frontend
 
 WORKDIR /app
-
 COPY package*.json ./
-# Install dependencies
 RUN npm ci
-
 COPY . .
-# Build assets (Vite build)
 RUN npm run build
 
-# --- Stage 2: Build Backend & Serve ---
+# --- Stage 2: Build Backend & Serve (MariaDB Optimized) ---
 FROM php:8.3-fpm-alpine
 
 # Install system dependencies
+# Kita ganti postgresql-dev dengan client mysql (opsional untuk debug)
 RUN apk add --no-cache \
     nginx \
     libpng-dev \
     libzip-dev \
     oniguruma-dev \
-    postgresql-dev \
     curl \
     zip \
     unzip
 
-# Install PHP Extensions (sesuaikan database driver, contoh: pgsql untuk Postgres, mysql pdo_mysql untuk MySQL)
-RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip
+# Install PHP Extensions
+# HANYA install pdo_mysql (kompatibel penuh dengan MariaDB)
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -34,8 +31,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Setup Working Directory
 WORKDIR /var/www/html
 
-# Setup Nginx Configuration
-# Kita buat konfigurasi nginx sederhana langsung di sini
+# Setup Nginx Configuration (Sama seperti sebelumnya)
 RUN echo 'server { \
     listen 80; \
     index index.php index.html; \
@@ -60,23 +56,20 @@ RUN echo 'server { \
 # Copy Project Files
 COPY . .
 
-# Copy Frontend Assets dari Stage 1
+# Copy Frontend Assets
 COPY --from=frontend /app/public/build public/build
 COPY --from=frontend /app/public/build/manifest.json public/build/manifest.json
 
-# Install PHP Dependencies (Optimized for Prod)
+# Install PHP Dependencies
 RUN composer install --no-dev --optimize-autoloader
 
 # Fix Permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Copy Entrypoint
+# Copy Entrypoint (Pastikan file entrypoint.sh sudah ada seperti panduan sebelumnya)
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Expose Port
 EXPOSE 80
-
-# Run Entrypoint
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
