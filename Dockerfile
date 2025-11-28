@@ -19,11 +19,12 @@ RUN apk add --no-cache \
     oniguruma-dev \
     curl \
     zip \
-    unzip
+    unzip \
+    icu-dev
 
 # Install PHP Extensions
 # HANYA install pdo_mysql (kompatibel penuh dengan MariaDB)
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -68,7 +69,7 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Copy Entrypoint (Pastikan file entrypoint.sh sudah ada seperti panduan sebelumnya)
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80
