@@ -27,6 +27,8 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        $middleware->trustProxies(at: '*');
     })
     ->withProviders([
         App\Providers\RouteServiceProvider::class

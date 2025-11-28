@@ -24,18 +24,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
-        $devEnv = env("APP_ENV") == "development";
-
-        if ($devEnv) {
-            URL::forceScheme("https");
-
-            Model::preventLazyLoading();
-            Model::preventSilentlyDiscardingAttributes();
+        if (app()->isProduction()) {
+            URL::forceScheme('https');
         }
 
-        if (app()->environment('production')) {
-            URL::forceScheme('https');
+        if (!app()->isProduction()) {
+            Model::preventLazyLoading();
+            Model::preventSilentlyDiscardingAttributes();
         }
 
         Inertia::share([
@@ -54,7 +49,9 @@ class AppServiceProvider extends ServiceProvider
                         'id' => $user->id,
                         'name' => $user->name,
                         'email' => $user->email,
-                        'role' => $user->role,
+                        // PERBAIKAN 2: Tambahkan safe operator (?->) dan ambil value-nya
+                        // Ini mencegah error jika role adalah Enum Object
+                        'role' => $user->role?->value ?? $user->role,
                     ];
                 }
                 return null;
